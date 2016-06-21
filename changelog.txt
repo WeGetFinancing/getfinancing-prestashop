@@ -1,0 +1,41 @@
+GetFinancing
+Author: Paga+Tarde
+
+-----------------------------------------
+Change history for Paga+tarde module
+-----------------------------------------
+VERSION 3.0.4 (18-11-2015)
+ * Send phone information to the Paga+Tarde form
+ * include widget script
+
+VERSION 3.0.3 (10-11-2015)
+ * Add configuration for multiple store installations
+
+VERSION 3.0.2 (30-10-2015)
+ * Added support to configure plugin for multiple stores
+ * Configuration fields set to global to support multi-stores
+
+VERSION 3.0.1 (25-10-2015)
+ * Added dynamic callback ( no webhook configuration needed)
+ * Added Discount (fee split feature)
+ * Address information sent to pmt
+ * fixed description text to be sent to pmt
+ * fixed webhook receiver in order to use relative path ( notification failed in prestashop installation was not in the root path)
+ * price simulator
+
+VERSION 2.0.0 (23-09-2015)
+ * Added backward compatibility lib.
+ * Deleted controllers folders to make it compatible with PS 1.4
+ * Refactor validation process to make it compatible with PS 1.4
+ * Refactor notification URL to make it compatible with PS 1.4 and avoid friendly url problems.
+ * Refactor URLs OK/KO to avoid friendly url problems.
+ * Custom template for PS 1.4 configuration page.
+ * Fix Choose environment on PS 1.5 configuration page.
+ * Fix payment button on PS 1.5
+
+VERSION 1.0.2 (14-09-2015)
+ * ADD: changelog.txt
+ * ADD: redirect in validation controller
+
+VERSION 1.0.0
+ * Original release
