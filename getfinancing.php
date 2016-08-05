@@ -37,7 +37,7 @@ class GetFinancing extends PaymentModule
     {
         $this->name = 'getfinancing';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.0';
+        $this->version = '1.0.1';
         $this->author = 'getfinancing';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -89,6 +89,7 @@ class GetFinancing extends PaymentModule
 
     private function _createGFTable()
     {
+      $result = '';
       $sql = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'getfinancing` (
           `id` int(10) NOT NULL AUTO_INCREMENT,
           `cart_id` int(10) NOT NULL,
@@ -323,12 +324,13 @@ class GetFinancing extends PaymentModule
 
         $url_OK = $this->getPagantisLink('confirmation.php', array('status'=>'ok', 'c' => $this->context->cart->id));
         $url_NOK = $this->getPagantisLink('confirmation.php', array('status'=>'ko'));
+        $callback_url= $this->getPagantisCallbackUrl('validation.php', array());
 
         if ($shippingCost > 0) {
             $desciption[]= $this->l('Shipping cost');
         }
 
-        $description = implode(',', $desciption);
+        $desciption = implode(',', $desciption);
 
         //address
         $address = new Address($this->context->cart->id_address_delivery);
@@ -339,7 +341,6 @@ class GetFinancing extends PaymentModule
         $zipcode=$address->postcode;
         $phone = $address->phone;
         $mobile_phone = $address->phone_mobile;
-        $desciption="test";
         $email = ($this->context->cookie->logged ? $this->context->cookie->email : $customer->email);
 
         /*
@@ -372,13 +373,19 @@ class GetFinancing extends PaymentModule
                 'zipcode' => $zipcode
             ),
             'email'            => $email,
+            'phone' => $mobile_phone,
+            'postback_url' => $callback_url,
+            'failure_url' => $url_NOK,
+            'success_url' => $url_OK,
             'merchant_loan_id' => (string)$merchant_loan_id,
-            'version' => '1.9'
+            'version' => '1.9',
+            'software_name' => 'prestashop',
+            'software_version' => 'prestashop ' ._PS_VERSION_ . ' - plugin '.$this->version
         );
-        $body_json_data = json_encode($gf_data);
+        $body_json_data = Tools::jsonEncode($gf_data);
         $header_auth = base64_encode(Configuration::get('GETFINANCING_USERNAME') . ":" . Configuration::get('GETFINANCING_PASSWORD'));
 
-        if (Configuration::get('GETFINANCING_ENVIRONMENT') == 1) {
+        if (Configuration::get('GETFINANCING_ENVIRONMENT') == 0) {
             $url_to_post = $this->gateway_url_stage;
         } else {
             $url_to_post = $this->gateway_url_prod;
@@ -399,16 +406,13 @@ class GetFinancing extends PaymentModule
         );
 
         $gf_response = $this->_remote_post( $url_to_post, $post_args );
-        $response_body = json_decode($gf_response);
+        $response_body = Tools::jsonDecode($gf_response);
         if (!isset($response_body->href)) {
           $error="GetFinancing cannot process your order. Please try again or select a different payment method.";
           return false;
           //if we want to show an error when gf is not loaded use:
           return  $this->displayError($error);
         }
-
-        //dynamic CallbackFilterIterator
-        $callback_url= $this->getPagantisCallbackUrl('validation.php', array());
 
         $this->smarty->assign(array(
             'url_OK' => $url_OK,
@@ -483,7 +487,7 @@ class GetFinancing extends PaymentModule
     /**
      * Set up RemotePost / Curl.
      */
-    function _remote_post($url,$args=array()) {
+    private function _remote_post($url,$args=array()) {
         $curl = curl_init();
 
         curl_setopt($curl, CURLOPT_URL, $url);
@@ -506,7 +510,7 @@ class GetFinancing extends PaymentModule
           curl_setopt($curl, CURLOPT_HTTPHEADER, $array_headers);
         }
 
-        if (strtoupper(substr(@php_uname('s'), 0, 3)) === 'WIN') {
+        if (Tools::strtoupper(Tools::substr(@php_uname('s'), 0, 3)) === 'WIN') {
             curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
         }

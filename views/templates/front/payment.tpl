@@ -71,7 +71,7 @@
           }
 
           var onComplete = function() {
-              window.location.href="{$url_OK|escape:'htmlall':'UTF-8'}";
+              window.location.href="{$url_OK}";
           };
 
           var onAbort = function() {
