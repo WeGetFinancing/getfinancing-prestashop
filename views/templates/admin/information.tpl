@@ -27,7 +27,7 @@
     <h3><i class="icon icon-credit-card"></i> {l s='GetFinancing' mod='getfinancing'}</h3>
     <div class="row getfinancing-header">
         <div class="col-xs-6 col-md-4">
-            <p><strong>{l s='GetFinancing - Purchase Finance Gateway'}</strong></p><br />
+            <p><strong>{l s='GetFinancing - Purchase Finance Gateway' mod='getfinancing'}</strong></p><br />
             <p>
                 {l s='GetFinancing is an online Purchase Finance Gateway. Choose GetFinancing as your Prestashop payment gateway to get access to multiple lenders in a powerful platform.' mod='getfinancing'}
                  <br />
