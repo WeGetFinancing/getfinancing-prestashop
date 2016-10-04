@@ -28,17 +28,15 @@ $data = Tools::jsonDecode($json);
   convert the merchant_transaction_id to cart id
  */
 
- $cart_id = 0;
- $sql = 'SELECT cart_id FROM '._DB_PREFIX_.'getfinancing where merchant_transaction_id = "'.$data->merchant_transaction_id.'"';
- if ($results = Db::getInstance()->ExecuteS($sql))
- {
-   foreach ($results as $row)
-   {
-       $cart_id = $row['cart_id'];
-   }
- }
+$cart_id = 0;
+$sql = 'SELECT cart_id FROM '._DB_PREFIX_.'getfinancing where merchant_transaction_id = "'.$data->merchant_transaction_id.'"';
+if ($results = Db::getInstance()->ExecuteS($sql)) {
+    foreach ($results as $row) {
+        $cart_id = $row['cart_id'];
+    }
+}
 
-if ($cart_id <= 0){
+if ($cart_id <= 0) {
     die(Tools::displayError('Fatal Error: Cart Id not found'));
 }
 

@@ -37,7 +37,7 @@ class GetFinancing extends PaymentModule
     {
         $this->name = 'getfinancing';
         $this->tab = 'payments_gateways';
-        $this->version = '1.0.1';
+        $this->version = '1.0.2';
         $this->author = 'getfinancing';
         $this->need_instance = 0;
         $this->bootstrap = true;
@@ -78,7 +78,7 @@ class GetFinancing extends PaymentModule
           getfinancing table to store relation with cart id and encrypted token
          */
 
-         $this->_createGFTable();
+         $this->createGfTable();
 
         return parent::install() &&
                 $this->registerHook('header') &&
@@ -87,16 +87,16 @@ class GetFinancing extends PaymentModule
                 $this->registerHook('footer');
     }
 
-    private function _createGFTable()
+    private function createGfTable()
     {
-      $result = '';
-      $sql = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'getfinancing` (
-          `id` int(10) NOT NULL AUTO_INCREMENT,
-          `cart_id` int(10) NOT NULL,
-          `merchant_transaction_id` varchar(128) NOT NULL,
-          PRIMARY KEY (`id`)
-          ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8;';
-          $result &= Db::getInstance()->execute($sql);
+        $result = '';
+        $sql = 'CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'getfinancing` (
+            `id` int(10) NOT NULL AUTO_INCREMENT,
+            `cart_id` int(10) NOT NULL,
+            `merchant_transaction_id` varchar(128) NOT NULL,
+            PRIMARY KEY (`id`)
+            ) ENGINE='._MYSQL_ENGINE_.' DEFAULT CHARSET=utf8;';
+            $result &= Db::getInstance()->execute($sql);
     }
 
     public function uninstall()
@@ -121,10 +121,11 @@ class GetFinancing extends PaymentModule
             Configuration::updateValue('GETFINANCING_MERCHANT_ID', Tools::getValue('GETFINANCING_MERCHANT_ID'));
             //Configuration::updateValue('GETFINANCING_CURRENCY', Tools::getValue('GETFINANCING_CURRENCY'));
 
-            if (!Validate::isInt(Tools::getValue('GETFINANCING_MIN_AMOUNT')))
+            if (!Validate::isInt(Tools::getValue('GETFINANCING_MIN_AMOUNT'))) {
                 $error .= $this->l('The minimun amount must be integer.');
-            else
+            } else {
                 Configuration::updateValue('GETFINANCING_MIN_AMOUNT', Tools::getValue('GETFINANCING_MIN_AMOUNT'));
+            }
 
             if ($error != '') {
                 $this->output .= $this->displayError($error);
@@ -291,8 +292,9 @@ class GetFinancing extends PaymentModule
 
     public function hookPayment($params)
     {
-        if ($this->context->cart->getOrderTotal() < Configuration::get('GETFINANCING_MIN_AMOUNT'))
+        if ($this->context->cart->getOrderTotal() < Configuration::get('GETFINANCING_MIN_AMOUNT')) {
             return;
+        }
 
         $customer = new Customer((int)$params['cart']->id_customer);
         $cart_products = $this->context->cart->getProducts();
@@ -332,15 +334,26 @@ class GetFinancing extends PaymentModule
 
         $desciption = implode(',', $desciption);
 
-        //address
-        $address = new Address($this->context->cart->id_address_delivery);
-        $street=$address->address1.' '.$address->address2;
-        $city=$address->city;
-        $user_state = new State($address->id_state);
-        $province=$user_state->iso_code;
-        $zipcode=$address->postcode;
-        $phone = $address->phone;
-        $mobile_phone = $address->phone_mobile;
+        //Shipping address
+        $saddress = new Address($this->context->cart->id_address_delivery);
+        $sstreet=$saddress->address1.' '.$saddress->address2;
+        $scity=$saddress->city;
+        $suser_state = new State($saddress->id_state);
+        $sprovince=$suser_state->name;
+        $szipcode=$saddress->postcode;
+        $sphone = $saddress->phone;
+        $smobile_phone = $saddress->phone_mobile;
+
+        //shippingAddress
+        $address2 = new Address($this->context->cart->id_address_invoice);
+        $street=$address2->address1.' '.$address2->address2;
+        $city=$address2->city;
+        $user_state2 = new State($address2->id_state);
+        $province=$user_state2->name;
+        $zipcode=$address2->postcode;
+        $phone = $address2->phone;
+        $mobile_phone = $address2->phone_mobile;
+
         $email = ($this->context->cookie->logged ? $this->context->cookie->email : $customer->email);
 
         /*
@@ -351,7 +364,14 @@ class GetFinancing extends PaymentModule
           'cart_id' => $this->context->cart->id,
           'merchant_transaction_id' => $merchant_loan_id);
 
-         $result = Db::getInstance()->insert('getfinancing', $insert_data, $null_values = false, $use_cache = true, $type = Db::INSERT, $add_prefix = true);
+         $result = Db::getInstance()->insert(
+             'getfinancing',
+             $insert_data,
+             $null_values = false,
+             $use_cache = true,
+             $type = Db::INSERT,
+             $add_prefix = true
+         );
 
         $gf_data = array(
             'amount'           => $amount,
@@ -361,10 +381,10 @@ class GetFinancing extends PaymentModule
             'last_name'        => ($this->context->cookie->logged ?
               $this->context->cookie->customer_lastname :  $customer->lastname),
             'shipping_address' => array(
-                'street1'  => $street,
-                'city'    => $city,
-                'state'   => $province,
-                'zipcode' => $zipcode
+                'street1'  => $sstreet,
+                'city'    => $scity,
+                'state'   => $sprovince,
+                'zipcode' => $szipcode
             ),
             'billing_address' => array(
                 'street1'  => $street,
@@ -405,13 +425,13 @@ class GetFinancing extends PaymentModule
              )
         );
 
-        $gf_response = $this->_remote_post( $url_to_post, $post_args );
+        $gf_response = $this->remotePost($url_to_post, $post_args);
         $response_body = Tools::jsonDecode($gf_response);
         if (!isset($response_body->href)) {
-          $error="GetFinancing cannot process your order. Please try again or select a different payment method.";
-          return false;
-          //if we want to show an error when gf is not loaded use:
-          return  $this->displayError($error);
+            $error="GetFinancing cannot process your order. Please try again or select a different payment method.";
+            return false;
+            //if we want to show an error when gf is not loaded use:
+            //return  $this->displayError($error);
         }
 
         $this->smarty->assign(array(
@@ -487,7 +507,8 @@ class GetFinancing extends PaymentModule
     /**
      * Set up RemotePost / Curl.
      */
-    private function _remote_post($url,$args=array()) {
+    private function remotePost($url, $args = array())
+    {
         $curl = curl_init();
 
         curl_setopt($curl, CURLOPT_URL, $url);
@@ -507,7 +528,7 @@ class GetFinancing extends PaymentModule
             $array_headers[] = $k . ": " . $v;
         }
         if (sizeof($array_headers)>0) {
-          curl_setopt($curl, CURLOPT_HTTPHEADER, $array_headers);
+            curl_setopt($curl, CURLOPT_HTTPHEADER, $array_headers);
         }
 
         if (Tools::strtoupper(Tools::substr(@php_uname('s'), 0, 3)) === 'WIN') {
@@ -519,9 +540,9 @@ class GetFinancing extends PaymentModule
         curl_close($curl);
 
         if (!$resp) {
-          return false;
+            return false;
         } else {
-          return $resp;
+            return $resp;
         }
     }
 }
