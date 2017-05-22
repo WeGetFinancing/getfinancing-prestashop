@@ -385,6 +385,7 @@ class GetFinancing extends PaymentModule
             'amount'           => $amount,
             //'product_info'     => $desciption,
             'cart_items'       => $cart_items,
+            'shipping_amount'  => $shippingCost,
             'first_name'       => ($this->context->cookie->logged ?
               $this->context->cookie->customer_firstname :  $customer->firstname),
             'last_name'        => ($this->context->cookie->logged ?
